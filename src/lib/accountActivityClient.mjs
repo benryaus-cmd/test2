@@ -20,16 +20,21 @@ function safeRow(item, own) {
   };
 }
 export function createAccountClient({ getToken, relayBase = '', fetchImpl = fetch, onRequest = () => {} }) {
-  let token = '', expiry = 0;
+  let token = '', expiry = 0, pendingToken = null;
   const base = relayBase.trim().replace(/\/+$/, '') || API_ORIGIN;
   const via = relayBase.trim() ? 'relay' : 'direct';
   async function currentToken(force = false) {
     if (!force && token && (!expiry || Date.now() + 60000 < expiry)) return token;
-    const received = await getToken();
-    token = typeof received === 'string' ? received.trim() : String(received?.token ?? '');
-    if (!token) throw new Error('Aippy runtime token not available');
-    expiry = tokenExpiry(token);
-    return token;
+    if (pendingToken) return pendingToken;
+    pendingToken = (async () => {
+      const received = await getToken();
+      token = typeof received === 'string' ? received.trim() : String(received?.token ?? '');
+      if (!token) throw new Error('Aippy runtime token not available');
+      expiry = tokenExpiry(token);
+      return token;
+    })();
+    try { return await pendingToken; }
+    finally { pendingToken = null; }
   }
   async function request(path) {
     const send = async (refresh) => {
