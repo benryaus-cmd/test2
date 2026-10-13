@@ -38,3 +38,13 @@ test('worker responds to aippy.live CORS preflight',async()=>{
   const r=await worker.fetch(new Request('https://relay.example/api/project',{method:'OPTIONS',headers:{Origin:'https://preview--test.aippy.live'}}));
   assert.equal(r.status,204);assert.equal(r.headers.get('Access-Control-Allow-Origin'),'https://preview--test.aippy.live');
 });
+
+test('parallel favourites and owned-project reads reuse one runtime token request', async () => {
+  let tokenCalls = 0;
+  const c = createAccountClient({
+    getToken: async () => { tokenCalls++; await new Promise(r => setTimeout(r, 5)); return 'token'; },
+    fetchImpl: async () => Response.json({code:0,data:{list:[],total:0}})
+  });
+  await Promise.all([c.favourites('8243796','7102340'),c.ownedProjects('8243796')]);
+  assert.equal(tokenCalls,1);
+});
