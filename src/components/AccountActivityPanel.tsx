@@ -22,6 +22,48 @@ export default function AccountActivityPanel() {
   const [progress, setProgress] = useState('');
   const [showOwned, setShowOwned] = useState(false);
   const [showLikes, setShowLikes] = useState(false);
+  const [revealedToken, setRevealedToken] = useState('');
+  const [tokenBusy, setTokenBusy] = useState(false);
+  const [tokenMessage, setTokenMessage] = useState('');
+  const [tokenClaims, setTokenClaims] = useState<Record<string, unknown> | null>(null);
+  const revealBearerToken = async () => {
+    setTokenBusy(true);
+    setTokenMessage('');
+    try {
+      const value = await getAuthTokenAsync();
+      const token = typeof value === 'string' ? value : (
+        typeof value?.token === 'string' ? value.token : ''
+      );
+      if (!token) throw new Error('Aippy returned no Bearer token');
+      setRevealedToken(token);
+      try {
+        const claims = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        setTokenClaims({
+          issuer: claims.iss ?? null,
+          type: claims.type ?? null,
+          uid: claims.userId ?? claims.uid ?? null,
+          expires: typeof claims.exp === 'number' ? new Date(claims.exp * 1000).toLocaleString() : null,
+          expired: typeof claims.exp === 'number' ? Date.now() >= claims.exp * 1000 : null
+        });
+      } catch { setTokenClaims(null); }
+      setTokenMessage('Current Aippy credential retrieved. Select or copy the field below.');
+    } catch (error) {
+      setTokenClaims(null);
+      setRevealedToken('');
+      setTokenMessage('Token request failed: ' + String(error instanceof Error ? error.message : error));
+    } finally {
+      setTokenBusy(false);
+    }
+  };
+  const copyBearerToken = async () => {
+    if (!revealedToken) return;
+    try {
+      await navigator.clipboard.writeText(revealedToken);
+      setTokenMessage('Bearer token copied.');
+    } catch {
+      setTokenMessage('Select the token text and use Copy.');
+    }
+  };
   const check = useCallback(async () => {
     const projectId = resolveInput(input);
     if (!user.uid || !projectId) { setProgress('Provide a numeric project ID or /project/ID link and wait for your Aippy user profile.'); return; }
@@ -81,6 +123,25 @@ export default function AccountActivityPanel() {
       <summary>My liked games ({favorites.length}{outcome.favorites.completed ? '' : '+'})</summary>
       {(showLikes ? favorites : favorites.slice(0,12)).map(row=><div key={row.projectId} style={{display:'flex',justifyContent:'space-between',padding:7,borderBottom:'1px solid #e4eaf0',fontSize:12}}><b>{row.name}</b><span>#{row.projectId}</span></div>)}
     </details>}
+    <details style={{marginTop:14,padding:'12px',border:'1px solid #d9e2e9',borderRadius:12}}>
+      <summary style={{fontWeight:700}}>Developer: view current Aippy Bearer token</summary>
+      <p style={{fontSize:12}}>Fetch the current signed-in account credential from the Aippy runtime. The value is shown only when requested and stays in this page's memory.</p>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',margin:'10px 0'}}>
+        <button type="button" onClick={() => { void revealBearerToken(); }} disabled={tokenBusy} style={{padding:'10px 14px',borderRadius:8,background:'#426c89',color:'#fff'}}>
+          {tokenBusy ? 'REQUESTING…' : 'REVEAL CURRENT BEARER TOKEN'}
+        </button>
+        {revealedToken && <button type="button" onClick={() => { void copyBearerToken(); }} style={{padding:'10px 14px',borderRadius:8,background:'#426c89',color:'#fff'}}>COPY TOKEN</button>}
+        {revealedToken && <button type="button" onClick={() => { setRevealedToken(''); setTokenClaims(null); setTokenMessage('Token hidden.'); }} style={{padding:'10px 14px',borderRadius:8,border:'1px solid #b9c6d0'}}>HIDE TOKEN</button>}
+      </div>
+      {tokenMessage && <p style={{fontSize:12,overflowWrap:'anywhere'}}>{tokenMessage}</p>}
+      {revealedToken && <>
+        <label htmlFor="aippy-bearer-token" style={{display:'block',margin:'8px 0',fontSize:12,fontWeight:700}}>Bearer token (copy the entire value, without the word Bearer)</label>
+        <textarea id="aippy-bearer-token" aria-label="Current Aippy Bearer token" readOnly spellCheck={false} value={revealedToken}
+          onFocus={e => e.currentTarget.select()}
+          style={{display:'block',width:'100%',minHeight:115,resize:'vertical',boxSizing:'border-box',fontFamily:'monospace',fontSize:12,color:'#172f43',background:'#f3f7fa',border:'1px solid #b9c6d0',borderRadius:8,padding:10,overflowWrap:'anywhere'}}/>
+        {tokenClaims && <pre style={{fontSize:11,overflowWrap:'anywhere',whiteSpace:'pre-wrap'}}>{JSON.stringify(tokenClaims,null,2)}</pre>}
+      </>}
+    </details>
     {outcome && <details style={{marginTop:14}}><summary>Request evidence</summary><pre style={{whiteSpace:'pre-wrap',fontSize:10}}>{JSON.stringify({requests:outcome.requests,errors:outcome.errors,liked:outcome.liked,favourites:{total:outcome.favorites?.total,pages:outcome.favorites?.pagesLoaded,complete:outcome.favorites?.completed},owned:{total:outcome.owned?.total,pages:outcome.owned?.pagesLoaded,complete:outcome.owned?.completed}},null,2)}</pre></details>}
   </section>;
 }
