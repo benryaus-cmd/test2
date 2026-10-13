@@ -1,0 +1,14 @@
+{
+  "version": "aippy-bearer-viewer-13oct2026",
+  "type": "incremental",
+  "mode": "incremental",
+  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/d16afa66042aec2221d616d6736fea2cb588dfab/",
+  "pinnedCommit": "d16afa66042aec2221d616d6736fea2cb588dfab",
+  "fileCount": 1,
+  "files": [
+    {
+      "source": "src/components/AccountActivityPanel.tsx",
+      "target": "src/components/AccountActivityPanel.tsx"
+    }
+  ]
+}
