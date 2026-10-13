@@ -49,7 +49,7 @@ export default function AccountActivityPanel() {
         };
         try {
           const headers = await createAippyHeadersAsync({ Accept: 'application/json' });
-          result.headersSent = [...headers.keys()];
+          result.headersSent = ['Aippy-Runtime-Authorization', 'Aippy-Runtime-SDK-Version', 'Aippy-Runtime-UA', 'Accept'].filter(name => headers.has(name));
           if (!headers.has('Aippy-Runtime-Authorization')) throw new Error('SDK did not provide Aippy-Runtime-Authorization');
           setRuntimeHeaderStatus('Calling ' + endpoint.label + ' with the SDK runtime header…');
           const response = await fetch('https://api.aippy.ai' + endpoint.path, {
