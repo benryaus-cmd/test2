@@ -30,9 +30,10 @@ export default function AccountActivityPanel() {
     setTokenBusy(true);
     setTokenMessage('');
     try {
-      const value = await getAuthTokenAsync();
+      const value: unknown = await getAuthTokenAsync();
       const token = typeof value === 'string' ? value : (
-        typeof value?.token === 'string' ? value.token : ''
+        value !== null && typeof value === 'object' && 'token' in value && typeof value.token === 'string'
+          ? value.token : ''
       );
       if (!token) throw new Error('Aippy returned no Bearer token');
       setRevealedToken(token);
