@@ -48,3 +48,37 @@ test('parallel favourites and owned-project reads reuse one runtime token reques
   await Promise.all([c.favourites('8243796','7102340'),c.ownedProjects('8243796')]);
   assert.equal(tokenCalls,1);
 });
+
+test('pasted Chrome Authorization header normalizes to plain JWT', async () => {
+  const { normalizeBearerToken, credentialKind } = await import('../src/lib/accountActivityClient.mjs');
+  const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjgyNDM3OTZ9.signature';
+  assert.equal(normalizeBearerToken('  Bearer ' + jwt + '  '), jwt);
+  assert.equal(credentialKind(jwt), 'JWT');
+  assert.equal(credentialKind('ofpb3WshW3tmSZQW1LPLYzskZ1D'), 'OPAQUE');
+});
+test('manually provided Chrome Bearer is sent unchanged and 4011 is not retried', async () => {
+  let calls = 0;
+  const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjgyNDM3OTZ9.signature';
+  const client = createAccountClient({
+    getToken: async () => 'Bearer ' + jwt,
+    refreshOnAuthFailure: false,
+    fetchImpl: async (_url, options) => {
+      calls++;
+      assert.equal(options.headers.Authorization, 'Bearer ' + jwt);
+      return Response.json({code:4011,msg:'Token expired, please refresh.'});
+    }
+  });
+  await assert.rejects(client.ownedProjects('8243796'), /API code 4011/);
+  assert.equal(calls, 1);
+});
+test('manual Chrome Bearer returns liked and draft information using real API response shapes', async () => {
+  const jwt = 'eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOjgyNDM3OTZ9.signature';
+  const fetchImpl = mockApi({
+    '/api/template/favorites/list:1': {code:0,msg:'ok',data:{list:[{id:2647174,projectId:7102340,name:'Dead City',favorite:true}],total:1,page:1,size:12}},
+    '/api/project:1': {code:0,msg:'ok',data:{list:[{id:7227296,uid:8243796,name:'Aippy Engagement Tester',publishStatus:0}],total:1,page:1,size:500}}
+  });
+  const client = createAccountClient({getToken:async()=>jwt,refreshOnAuthFailure:false,fetchImpl});
+  const [favourites,owned] = await Promise.all([client.favourites('8243796','7102340'),client.ownedProjects('8243796')]);
+  assert.equal(favourites.liked,'YES'); assert.equal(favourites.match.name,'Dead City');
+  assert.equal(owned.items[0].publishStatus,0);
+});
