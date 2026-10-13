@@ -69,7 +69,7 @@ export default function AccountActivityPanel() {
     {outcome?.errors.map((e,i) => <p key={i} style={{color:'#a3342b',fontSize:12,overflowWrap:'anywhere'}}>{e}</p>)}
     <details style={{marginTop:13}}><summary>Authenticated request route</summary>
       <p style={{fontSize:12}}>Aippy's browser API allows the aippy.ai origin. Published games on aippy.live can use the accompanying server relay (relay/worker.mjs).</p>
-      <input aria-label="Relay origin" value={relayInput} onChange={e => setRelayInput(e.target.value)} placeholder="https://your-relay.workers.dev" style={{width:'100%',padding:9,border:'1px solid #ccd7e1',borderRadius:8,color:'#243947',background:'#fff'}} />
+      <input aria-label="Relay origin" value={relayInput} onChange={e => setRelayInput(e.target.value)} placeholder="Relay endpoint (optional)" style={{width:'100%',padding:9,border:'1px solid #ccd7e1',borderRadius:8,color:'#243947',background:'#fff'}} />
       <button type="button" onClick={saveRelay} style={{marginTop:8,padding:'9px 16px',borderRadius:8,background:'#426c89',color:'#fff'}}>USE ROUTE</button>
       <p style={{fontSize:12}}>Transport: {relay || 'direct browser'}</p>
     </details>
