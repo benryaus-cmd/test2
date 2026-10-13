@@ -1,7 +1,7 @@
 {
   "version": "aippy-account-engagement-2026-10-13",
   "mode": "overlay",
-  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/main/",
+  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/ec0d768f07885d1f8ec93ddfb82094bd7b5e5d63/",
   "files": [
     {
       "source": "src/lib/accountActivityClient.mjs",
@@ -20,5 +20,6 @@
       "target": "src/lib/parseProjectInput.ts"
     }
   ],
-  "description": "Adds the Bearer favorites/all-projects panel and share.aippy.ai/p/CODE parsing to the current Aippy tester."
+  "description": "Adds the Bearer favorites/all-projects panel and share.aippy.ai/p/CODE parsing to the current Aippy tester.",
+  "pinnedCommit": "ec0d768f07885d1f8ec93ddfb82094bd7b5e5d63"
 }
