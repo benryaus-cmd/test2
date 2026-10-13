@@ -14,7 +14,11 @@
     {
       "source": "src/App.tsx",
       "target": "src/App.tsx"
+    },
+    {
+      "source": "src/lib/parseProjectInput.ts",
+      "target": "src/lib/parseProjectInput.ts"
     }
   ],
-  "description": "Adds the per-player Bearer favourites and all-owned-projects panel to the existing Aippy Engagement Tester. Existing files outside this list remain in place."
+  "description": "Adds the Bearer favorites/all-projects panel and share.aippy.ai/p/CODE parsing to the current Aippy tester."
 }
