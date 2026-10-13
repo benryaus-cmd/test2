@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getAuthTokenAsync, useUserInfo } from '@aippy/runtime/user';
+import { createAippyHeadersAsync } from '@aippy/runtime/core';
 import { createAccountClient, normalizeBearerToken, credentialKind } from '@/lib/accountActivityClient.mjs';
 
 type Entry = { projectId: string; name: string; templateId: string; publishStatus: number | null; collected: boolean };
 type Listing = { items: Entry[]; total: number; pagesLoaded: number; completed: boolean };
 type Outcome = { liked: 'YES' | 'NO' | 'UNKNOWN'; favorites?: Listing & { match: Entry | null }; owned?: Listing; errors: string[]; requests: unknown[] };
+type RuntimeHeaderResult = { endpoint: string; headersSent: string[]; httpStatus: number | null; appCode: string | number | null; message: string; listLength: number | null; error?: string };
 function savedRelay() { try { return localStorage.getItem('aippy-account-relay') ?? ''; } catch { return ''; } }
 function resolveInput(value: string) {
   const v = value.trim();
@@ -26,6 +28,56 @@ export default function AccountActivityPanel() {
   const [tokenBusy, setTokenBusy] = useState(false);
   const [tokenMessage, setTokenMessage] = useState('');
   const [tokenClaims, setTokenClaims] = useState<Record<string, unknown> | null>(null);
+  const [runtimeHeaderBusy, setRuntimeHeaderBusy] = useState(false);
+  const [runtimeHeaderResults, setRuntimeHeaderResults] = useState<RuntimeHeaderResult[] | null>(null);
+  const [runtimeHeaderStatus, setRuntimeHeaderStatus] = useState('');
+  const runRuntimeHeaderTest = async () => {
+    if (!user.uid) { setRuntimeHeaderStatus('Wait for your Aippy account UID to load.'); return; }
+    setRuntimeHeaderBusy(true);
+    setRuntimeHeaderResults(null);
+    setRuntimeHeaderStatus('Requesting Aippy runtime headers from the SDK…');
+    const endpoints = [
+      { label: 'Owned projects', path: '/api/project?page=1&size=1&uid=' + encodeURIComponent(String(user.uid)) },
+      { label: 'Favourites', path: '/api/template/favorites/list?targetUid=' + encodeURIComponent(String(user.uid)) + '&page=1&size=1' }
+    ];
+    try {
+      const results: RuntimeHeaderResult[] = [];
+      for (const endpoint of endpoints) {
+        const result: RuntimeHeaderResult = {
+          endpoint: endpoint.label, headersSent: [], httpStatus: null,
+          appCode: null, message: '', listLength: null
+        };
+        try {
+          const headers = await createAippyHeadersAsync({ Accept: 'application/json' });
+          result.headersSent = [...headers.keys()];
+          if (!headers.has('Aippy-Runtime-Authorization')) throw new Error('SDK did not provide Aippy-Runtime-Authorization');
+          setRuntimeHeaderStatus('Calling ' + endpoint.label + ' with the SDK runtime header…');
+          const response = await fetch('https://api.aippy.ai' + endpoint.path, {
+            method: 'GET', cache: 'no-store', credentials: 'omit', headers
+          });
+          result.httpStatus = response.status;
+          const body: unknown = await response.json();
+          if (body && typeof body === 'object') {
+            const data = body as {code?: number | string; msg?: string; message?: string; data?: {list?: unknown[]}};
+            result.appCode = data.code ?? null;
+            result.message = String(data.msg ?? data.message ?? '');
+            result.listLength = Array.isArray(data.data?.list) ? data.data.list.length : null;
+          } else {
+            result.message = 'Response was not a JSON object';
+          }
+        } catch (error) {
+          result.error = String(error instanceof Error ? error.message : error);
+        }
+        results.push(result);
+      }
+      setRuntimeHeaderResults(results);
+      setRuntimeHeaderStatus('Runtime-header test finished. Compare the HTTP and API codes below.');
+    } catch (error) {
+      setRuntimeHeaderStatus('Could not obtain runtime headers: ' + String(error instanceof Error ? error.message : error));
+    } finally {
+      setRuntimeHeaderBusy(false);
+    }
+  };
   const [manualBearerInput, setManualBearerInput] = useState('');
   const [manualVisible, setManualVisible] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
@@ -169,6 +221,37 @@ export default function AccountActivityPanel() {
     <div style={{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:9,margin:'12px 0'}}>{metrics.map(([key,value]) => <div key={String(key)} style={{border:'1px solid #d9e2e9',borderRadius:11,padding:10,minWidth:0}}><small style={{display:'block',color:'#6a7d8b'}}>{key}</small><strong style={{fontSize:20}}>{value}</strong></div>)}</div>
     {outcome?.favorites?.match && <p style={{color:'#136c41'}}>Confirmed liked: {outcome.favorites.match.name} (project #{outcome.favorites.match.projectId}, template #{outcome.favorites.match.templateId})</p>}
     {outcome?.errors.map((e,i) => <p key={i} style={{color:'#a3342b',fontSize:12,overflowWrap:'anywhere'}}>{e}</p>)}
+    <section style={{marginTop:14,padding:12,border:'1px solid #d9e2e9',borderRadius:12}}>
+      <strong style={{display:'block',marginBottom:5}}>Native Aippy Runtime Header Test</strong>
+      <p style={{fontSize:12,opacity:.8,marginBottom:9}}>Test the SDK's real <code>createAippyHeadersAsync()</code> headers against Aippy account endpoints. Uses your current Aippy session automatically, with no Chrome JWT or PowerShell.</p>
+      <button type="button" disabled={!user.uid || runtimeHeaderBusy} onClick={() => { void runRuntimeHeaderTest(); }}
+        style={{width:'100%',padding:'13px 10px',borderRadius:9,background:'#426c89',color:'white',fontWeight:700}}>
+        {runtimeHeaderBusy ? 'TESTING RUNTIME HEADER…' : 'TEST RUNTIME AUTH HEADER'}
+      </button>
+      <p style={{fontSize:12,marginTop:8}}>{runtimeHeaderStatus}</p>
+      {runtimeHeaderResults && <div style={{display:'grid',gap:9}}>
+        {runtimeHeaderResults.map(item => <div key={item.endpoint} style={{padding:10,border:'1px solid #d9e2e9',borderRadius:9}}>
+          <strong style={{fontSize:13}}>{item.endpoint}</strong>
+          <div style={{display:'flex',gap:15,flexWrap:'wrap',marginTop:5}}>
+            <span>HTTP: <strong>{item.httpStatus ?? '—'}</strong></span>
+            <span>API code: <strong>{item.appCode ?? '—'}</strong></span>
+            <span>Items: <strong>{item.listLength ?? '—'}</strong></span>
+          </div>
+          {item.message && <p style={{fontSize:12,overflowWrap:'anywhere'}}>Message: {item.message}</p>}
+          {item.error && <p style={{fontSize:12,color:'#a3342b',overflowWrap:'anywhere'}}>Transport / SDK error: {item.error}</p>}
+          <p style={{fontSize:11,opacity:.7,overflowWrap:'anywhere'}}>Header names: {item.headersSent.join(', ') || 'unavailable'}</p>
+        </div>)}
+        <details>
+          <summary style={{fontSize:12}}>Copyable runtime-header evidence (credentials excluded)</summary>
+          <pre style={{fontSize:10,whiteSpace:'pre-wrap',overflowWrap:'anywhere'}}>{JSON.stringify({
+            transport: 'direct browser',
+            SDK: '@aippy/runtime@0.4.1',
+            method: 'GET',
+            results: runtimeHeaderResults
+          }, null, 2)}</pre>
+        </details>
+      </div>}
+    </section>
     <details open style={{marginTop:14,padding:'12px',border:'1px solid #d9e2e9',borderRadius:12}}>
       <summary style={{fontWeight:700}}>Developer: test a Chrome website Bearer token</summary>
       <p style={{fontSize:12}}>Paste the token you used successfully in PowerShell. Both raw JWT and `Bearer eyJ...` input are accepted. The test uses this credential rather than the native Aippy runtime token.</p>
