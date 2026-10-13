@@ -19,7 +19,15 @@ function safeRow(item, own) {
     likes: typeof item.likes === 'number' ? item.likes : 0,
   };
 }
-export function createAccountClient({ getToken, relayBase = '', fetchImpl = fetch, onRequest = () => {} }) {
+export function normalizeBearerToken(value) {
+  return String(value ?? '').trim().replace(/^Bearer\s+/i, '').trim();
+}
+export function credentialKind(value) {
+  const token = normalizeBearerToken(value);
+  if (!token) return 'NONE';
+  return /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token) ? 'JWT' : 'OPAQUE';
+}
+export function createAccountClient({ getToken, relayBase = '', fetchImpl = fetch, onRequest = () => {}, refreshOnAuthFailure = true }) {
   let token = '', expiry = 0, pendingToken = null;
   const base = relayBase.trim().replace(/\/+$/, '') || API_ORIGIN;
   const via = relayBase.trim() ? 'relay' : 'direct';
@@ -28,7 +36,7 @@ export function createAccountClient({ getToken, relayBase = '', fetchImpl = fetc
     if (pendingToken) return pendingToken;
     pendingToken = (async () => {
       const received = await getToken();
-      token = typeof received === 'string' ? received.trim() : String(received?.token ?? '');
+      token = normalizeBearerToken(typeof received === 'string' ? received : received?.token);
       if (!token) throw new Error('Aippy runtime token not available');
       expiry = tokenExpiry(token);
       return token;
@@ -39,7 +47,7 @@ export function createAccountClient({ getToken, relayBase = '', fetchImpl = fetc
   async function request(path) {
     const send = async (refresh) => {
       const bearer = await currentToken(refresh);
-      onRequest({ path, via, phase: 'request' });
+      onRequest({ path, via, phase: 'request', credentialKind: credentialKind(bearer) });
       let response;
       try {
         response = await fetchImpl(base + path, {
@@ -54,7 +62,7 @@ export function createAccountClient({ getToken, relayBase = '', fetchImpl = fetc
       return { response, data };
     };
     let { response, data } = await send(false);
-    if (response.status === 401 || String(data?.code) === '4011') ({ response, data } = await send(true));
+    if (refreshOnAuthFailure && (response.status === 401 || String(data?.code) === '4011')) ({ response, data } = await send(true));
     if (!response.ok || data?.code !== 0) throw new Error(path + ': HTTP ' + response.status + ', API code ' + String(data?.code) + ' ' + String(data?.msg ?? ''));
     return data.data ?? {};
   }
