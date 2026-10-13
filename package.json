@@ -1,0 +1,10 @@
+{
+  "name": "aippy-engagement-overlay",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Aippy tester account engagement overlay, tests, and optional CORS relay",
+  "scripts": {
+    "test": "node --test tests/accountActivity.test.mjs"
+  }
+}
