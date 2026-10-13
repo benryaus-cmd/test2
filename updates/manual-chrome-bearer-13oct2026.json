@@ -1,0 +1,19 @@
+{
+  "version": "manual-chrome-bearer-comparison-13oct2026",
+  "type": "incremental",
+  "mode": "incremental",
+  "repository": "benryaus-cmd/test2",
+  "commit": "992b49fde6f879e50cbf2afc9aa74978b6ec478f",
+  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/992b49fde6f879e50cbf2afc9aa74978b6ec478f/",
+  "fileCount": 2,
+  "files": [
+    {
+      "source": "src/lib/accountActivityClient.mjs",
+      "target": "src/lib/accountActivityClient.mjs"
+    },
+    {
+      "source": "src/components/AccountActivityPanel.tsx",
+      "target": "src/components/AccountActivityPanel.tsx"
+    }
+  ]
+}
