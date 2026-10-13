@@ -1,0 +1,20 @@
+{
+  "version": "aippy-account-engagement-2026-10-13",
+  "mode": "overlay",
+  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/main/",
+  "files": [
+    {
+      "source": "src/lib/accountActivityClient.mjs",
+      "target": "src/lib/accountActivityClient.mjs"
+    },
+    {
+      "source": "src/components/AccountActivityPanel.tsx",
+      "target": "src/components/AccountActivityPanel.tsx"
+    },
+    {
+      "source": "src/App.tsx",
+      "target": "src/App.tsx"
+    }
+  ],
+  "description": "Adds the per-player Bearer favourites and all-owned-projects panel to the existing Aippy Engagement Tester. Existing files outside this list remain in place."
+}
