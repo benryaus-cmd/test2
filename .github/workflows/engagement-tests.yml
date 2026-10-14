@@ -12,3 +12,5 @@ jobs:
         with:
           node-version: '22'
       - run: node --test tests/accountActivity.test.mjs
+      - name: Compile storage page and App TSX syntax
+        run: npx --yes --package esbuild@0.25.12 esbuild src/dev/StorageExplorer.tsx src/App.tsx --outdir=/tmp/storage-syntax --format=esm
