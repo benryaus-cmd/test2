@@ -3,8 +3,8 @@
   "type": "incremental",
   "mode": "incremental",
   "repository": "benryaus-cmd/test2",
-  "pinnedCommit": "1daa9f613a3c1a3746f20412afa21f4e62628f91",
-  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/1daa9f613a3c1a3746f20412afa21f4e62628f91/",
+  "pinnedCommit": "24ed0cae9bc2a2de3e4d825724dc90d13412a1d5",
+  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/24ed0cae9bc2a2de3e4d825724dc90d13412a1d5/",
   "fileCount": 2,
   "files": [
     {
