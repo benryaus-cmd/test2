@@ -198,7 +198,6 @@ async function copyText(value: string) {
 }
 const buttonStyle = { border: '1px solid #587087', background: '#183147', color: '#eef5fc',
   borderRadius: 9, padding: '9px 11px', cursor: 'pointer', fontSize: 12 };
-const sensitive = (entry: Item) => /token|auth|bearer|secret|password|credential|cookie|session|jwt|key/i.test(entry.key + ' ' + entry.location);
 
 export default function StorageExplorer({open, onClose}: {open: boolean; onClose: () => void}) {
   const [result, setResult] = useState<ScanResult | null>(null);
@@ -314,7 +313,7 @@ export default function StorageExplorer({open, onClose}: {open: boolean; onClose
         <span style={{fontSize:10,color:'#94d5ee'}}>{item.source} · {item.location}</span>
         <span style={{fontSize:13,fontWeight:650,display:'block',overflowWrap:'anywhere',marginTop:3}}>{item.key}</span>
         <span style={{fontSize:10,color:'#b5c8d8'}}>
-          {sensitive(item) ? 'Sensitive-looking key · value hidden' : item.value.length ? item.value.slice(0,70).replace(/\s+/g,' ') : '(empty value)'}
+          {'Value hidden · tap to inspect'}
           {' · '}{item.size.toLocaleString()} chars
         </span>
       </button>)}
