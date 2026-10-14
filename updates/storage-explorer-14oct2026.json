@@ -1,0 +1,19 @@
+{
+  "version": "aippy-storage-explorer-14oct2026",
+  "type": "incremental",
+  "mode": "incremental",
+  "repository": "benryaus-cmd/test2",
+  "pinnedCommit": "1daa9f613a3c1a3746f20412afa21f4e62628f91",
+  "baseUrl": "https://raw.githubusercontent.com/benryaus-cmd/test2/1daa9f613a3c1a3746f20412afa21f4e62628f91/",
+  "fileCount": 2,
+  "files": [
+    {
+      "source": "src/dev/StorageExplorer.tsx",
+      "target": "src/dev/StorageExplorer.tsx"
+    },
+    {
+      "source": "src/App.tsx",
+      "target": "src/App.tsx"
+    }
+  ]
+}
