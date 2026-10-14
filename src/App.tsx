@@ -4,6 +4,7 @@ import tweaksConfig from '@/config/tweaksConfig.json';
 import EngagementTester from '@/components/EngagementTester';
 import AccountActivityPanel from '@/components/AccountActivityPanel';
 import ProjectFiles from '@/dev/ProjectFiles';
+import StorageExplorer from '@/dev/StorageExplorer';
 import { useState, type CSSProperties } from 'react';
 
 const tweaks = aippyTweaks(tweaksConfig);
@@ -17,6 +18,7 @@ function App() {
   const cornerRadius = tweaks.cornerRadius.useState();
   const compactLayout = tweaks.compactLayout.useState();
   const [projectFilesOpen, setProjectFilesOpen] = useState(false);
+  const [storageOpen, setStorageOpen] = useState(false);
   const themeStyle = {
     '--page-color': pageColor, '--panel-color': panelColor,
     '--ink-color': inkColor, '--accent-color': accentColor,
@@ -36,7 +38,16 @@ function App() {
     }}>
       <img src={cogAsset} alt="" width="26" height="26" />
     </button>
+    <button type="button" aria-label="Open Storage Explorer" title="Storage Explorer"
+      onClick={() => setStorageOpen(true)} style={{
+      position:'fixed', top:'max(8px, env(safe-area-inset-top))', right:64, zIndex:80,
+      height:44, padding:'0 10px', border:'1px solid #d5dee7',
+      borderRadius:12, background:'#fff', color:'#243947', fontSize:11,
+      fontWeight:800, letterSpacing:'.025em', boxShadow:'0 2px 8px rgba(24, 44, 62, .12)',
+      cursor:'pointer', touchAction:'manipulation'
+    }}>STORAGE</button>
     <ProjectFiles open={projectFilesOpen} onClose={() => setProjectFilesOpen(false)} />
+    <StorageExplorer open={storageOpen} onClose={() => setStorageOpen(false)} />
   </div>;
 }
 export default App;
